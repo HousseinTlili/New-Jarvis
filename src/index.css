@@ -1,0 +1,281 @@
+@import "tailwindcss";
+
+@theme {
+  --color-neon-cyan: #00f0ff;
+  --color-neon-pink: #ff2d78;
+  --color-neon-yellow: #ffe600;
+  --color-neon-green: #39ff14;
+  --color-neon-purple: #bc13fe;
+  --color-bg-deep: #050508;
+  --color-bg-panel: #0a0c12;
+  --color-bg-elevated: #111520;
+  --color-bg-glass: rgba(10, 12, 18, 0.7);
+
+  /* Mapping standard tokens to cyberpunk ones for compatibility */
+  --color-bg-primary: #050508;
+  --color-bg-secondary: #0a0c12;
+  --color-accent: #00f0ff;
+  --color-accent-glow: rgba(0, 240, 255, 0.3);
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-border: rgba(0, 240, 255, 0.15);
+  --color-border-hot: rgba(255, 45, 120, 0.25);
+  --color-danger: #ff2d78;
+  --color-success: #39ff14;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+}
+
+/* Base resets */
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #050508;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: #f1f5f9;
+  overflow: hidden;
+}
+
+/* Custom Scrollbars - Cyberpunk Neon Styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(5, 5, 8, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 240, 255, 0.15);
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 240, 255, 0.05);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 240, 255, 0.4);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+}
+
+/* Drag utility for frameless window */
+.drag-region {
+  -webkit-app-region: drag;
+}
+.no-drag-region {
+  -webkit-app-region: no-drag;
+}
+
+/* --- Cyberpunk Utilities --- */
+
+/* SVG Grid Background overlay */
+.cyber-grid {
+  background-image: 
+    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: center center;
+}
+
+/* Scanlines CRT overlay effect */
+.cyber-scanlines::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.12) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+  background-size: 100% 4px, 6px 100%;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+/* Glowing text and borders */
+.cyber-glow-cyan {
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.15), inset 0 0 5px rgba(0, 240, 255, 0.05);
+}
+.cyber-glow-pink {
+  box-shadow: 0 0 10px rgba(255, 45, 120, 0.2), inset 0 0 5px rgba(255, 45, 120, 0.05);
+}
+
+.cyber-glow-text-cyan {
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+}
+.cyber-glow-text-pink {
+  text-shadow: 0 0 8px rgba(255, 45, 120, 0.4);
+}
+.cyber-glow-text-green {
+  text-shadow: 0 0 8px rgba(57, 255, 20, 0.4);
+}
+
+/* Angled corner cuts (Cyberpunk style cards) */
+.cyber-clip {
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+}
+.cyber-clip-sm {
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+}
+
+/* Double-border custom styling */
+.cyber-border-cyan {
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  outline: 1px solid rgba(0, 240, 255, 0.08);
+  outline-offset: 2px;
+}
+.cyber-border-pink {
+  border: 1px solid rgba(255, 45, 120, 0.3);
+  outline: 1px solid rgba(255, 45, 120, 0.1);
+  outline-offset: 2px;
+}
+
+/* --- VSCode-style Code Syntax Highlighting (for highlight.js) --- */
+.hljs-keyword, .hljs-built_in, .hljs-selector-tag { color: #569cd6; font-weight: 500; }  /* blue */
+.hljs-string, .hljs-regexp, .hljs-meta .hljs-string { color: #ce9178; }  /* orange */
+.hljs-number, .hljs-literal { color: #b5cea8; }  /* light green */
+.hljs-comment, .hljs-quote { color: #6a9955; font-style: italic; } /* green comments */
+.hljs-function, .hljs-title, .hljs-title.function_ { color: #dcdcaa; }  /* yellow */
+.hljs-type, .hljs-class, .hljs-title.class_ { color: #4ec9b0; }  /* teal */
+.hljs-variable, .hljs-attr, .hljs-property { color: #9cdcfe; }  /* light blue */
+.hljs-tag, .hljs-name { color: #569cd6; } /* tag name */
+.hljs-attribute { color: #9cdcfe; }
+.hljs-symbol, .hljs-bullet, .hljs-link { color: #b5cea8; }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: bold; }
+.hljs-section { color: #569cd6; font-weight: bold; }
+.hljs { background: #0a0e17; color: #d4d4d4; }
+
+/* Custom highlighting wrapper style */
+pre code.hljs {
+  padding: 1rem;
+  display: block;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* --- Global Cyberpunk Markdown Overrides --- */
+
+/* Cyber Table Styling */
+.cyber-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+.cyber-table th {
+  background-color: rgba(0, 240, 255, 0.05);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  color: #00f0ff;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  text-shadow: 0 0 4px rgba(0, 240, 255, 0.3);
+}
+.cyber-table td {
+  border: 1px solid rgba(0, 240, 255, 0.1);
+  padding: 8px 12px;
+  background-color: rgba(10, 14, 23, 0.4);
+}
+.cyber-table tr:hover td {
+  background-color: rgba(0, 240, 255, 0.03);
+  border-color: rgba(0, 240, 255, 0.2);
+}
+
+/* Blockquotes */
+.cyber-blockquote {
+  border-left: 3px solid #00f0ff;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: #94a3b8;
+  background-color: rgba(0, 240, 255, 0.02);
+  font-style: italic;
+}
+
+/* --- Mermaid SVG styling overrides --- */
+.mermaid svg {
+  background-color: #06080e !important;
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  border-radius: 6px;
+  padding: 12px;
+}
+.mermaid .node rect, 
+.mermaid .node circle, 
+.mermaid .node ellipse, 
+.mermaid .node polygon, 
+.mermaid .node path {
+  fill: #0c101b !important;
+  stroke: #00f0ff !important;
+  stroke-width: 1.5px !important;
+  filter: drop-shadow(0 0 3px rgba(0, 240, 255, 0.2));
+}
+.mermaid .edgePath .path {
+  stroke: #00f0ff !important;
+  stroke-width: 1.5px !important;
+}
+.mermaid .edgeLabel rect {
+  fill: #06080e !important;
+}
+.mermaid .label {
+  color: #e2e8f0 !important;
+  font-family: var(--font-mono) !important;
+}
+.mermaid .marker {
+  fill: #00f0ff !important;
+  stroke: #00f0ff !important;
+}
+
+/* --- Keyframe Animations --- */
+@keyframes cyber-pulse-cyan {
+  0%, 100% {
+    border-color: rgba(0, 240, 255, 0.2);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.1);
+  }
+  50% {
+    border-color: rgba(0, 240, 255, 0.5);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+  }
+}
+
+@keyframes cyber-pulse-pink {
+  0%, 100% {
+    border-color: rgba(255, 45, 120, 0.25);
+    box-shadow: 0 0 8px rgba(255, 45, 120, 0.15);
+  }
+  50% {
+    border-color: rgba(255, 45, 120, 0.6);
+    box-shadow: 0 0 18px rgba(255, 45, 120, 0.45);
+  }
+}
+
+.animate-pulse-cyan {
+  animation: cyber-pulse-cyan 3s infinite ease-in-out;
+}
+
+.animate-pulse-pink {
+  animation: cyber-pulse-pink 2.5s infinite ease-in-out;
+}
+
+/* Custom flicker effect for cyber headings */
+@keyframes glitch-flicker {
+  0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% {
+    opacity: 0.99;
+    filter: hue-rotate(0deg);
+  }
+  20%, 21.999%, 63%, 63.999%, 65%, 69.999% {
+    opacity: 0.4;
+    filter: hue-rotate(90deg);
+  }
+}
+
+.animate-glitch {
+  animation: glitch-flicker 5s infinite;
+}
