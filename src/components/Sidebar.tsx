@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useJarvisStore, Conversation } from "../store";
-import { Plus, MessageSquare, Trash2, Edit2, Check, X, Menu, Terminal, Zap, Mic, Volume2, Folder, FolderPlus, Loader2, ChevronDown, ChevronRight, LayoutDashboard } from "lucide-react";
+import { Plus, MessageSquare, Trash2, Edit2, Check, X, Menu, Terminal, Zap, Mic, Volume2, Folder, FolderPlus, Loader2, ChevronDown, ChevronRight, LayoutDashboard, Settings } from "lucide-react";
 
 const SegmentedProgressBar: React.FC<{ value: number; colorClass: string }> = ({ value, colorClass }) => {
   const activeSegments = Math.round(value / 10);
@@ -115,13 +115,26 @@ export const Sidebar: React.FC = () => {
             <span className="text-[9px] text-neon-cyan/60 block font-mono">LOCAL v0.1</span>
           </div>
         </div>
-        <button
-          onClick={() => setSidebarOpen(false)}
-          className="p-1.5 border border-transparent hover:border-neon-cyan/30 rounded text-slate-400 hover:text-white hover:bg-neon-cyan/5 transition-colors active:scale-95 no-drag-region cursor-pointer"
-          title="Collapse Sidebar"
-        >
-          <X className="w-4.5 h-4.5" />
-        </button>
+        <div className="flex items-center gap-1 no-drag-region">
+          <button
+            onClick={() => setActiveView("settings")}
+            className={`p-1.5 border border-transparent rounded hover:bg-neon-cyan/5 transition-colors cursor-pointer active:scale-95 ${
+              activeView === "settings"
+                ? "text-neon-cyan border-neon-cyan/20 bg-neon-cyan/5"
+                : "text-slate-400 hover:text-white"
+            }`}
+            title="Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="p-1.5 border border-transparent hover:border-neon-cyan/30 rounded text-slate-400 hover:text-white hover:bg-neon-cyan/5 transition-colors active:scale-95 cursor-pointer"
+            title="Collapse Sidebar"
+          >
+            <X className="w-4.5 h-4.5" />
+          </button>
+        </div>
       </div>
 
       {/* New Chat Button */}

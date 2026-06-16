@@ -154,7 +154,62 @@ def init_db():
         created_at TEXT NOT NULL
     );
     """)
+    
+    # Settings: Create settings table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+    );
+    """)
+    
+    # Pre-populate default settings
+    default_settings = {
+        "provider": "local",
+        "local_model": "qwen3.5:9b",
+        "local_host": "http://localhost:11434",
+        "openai_model": "gpt-4o-mini",
+        "openai_base_url": "https://api.openai.com/v1",
+        "anthropic_model": "claude-3-5-sonnet-latest",
+        "gemini_model": "gemini-1.5-flash",
+        "nvidia_model": "minimaxai/minimax-m3",
+        "nvidia_base_url": "https://integrate.api.nvidia.com/v1",
+    }
+    for k, v in default_settings.items():
+        cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)", (k, v))
+        
+    # Migrations: Add reasoning_content to messages if not present
+    try:
+        cursor.execute("SELECT reasoning_content FROM messages LIMIT 1;")
+    except sqlite3.OperationalError:
+        cursor.execute("ALTER TABLE messages ADD COLUMN reasoning_content TEXT;")
         
     conn.commit()
     conn.close()
+
+def get_setting(key: str, default: str = None) -> str:
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT value FROM settings WHERE key = ?", (key,))
+        row = cursor.fetchone()
+        if row:
+            return row["value"]
+    except sqlite3.OperationalError:
+        pass
+    finally:
+        conn.close()
+    return default
+
+def save_setting(key: str, value: str):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+            (key, value)
+        )
+        conn.commit()
+    finally:
+        conn.close()
 

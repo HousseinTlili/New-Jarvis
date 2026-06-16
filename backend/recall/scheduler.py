@@ -71,13 +71,10 @@ def execute_background_task(job_id: str, task_type: str, task_content: str):
             )
         elif task_type == "prompt":
             async def run_prompt():
-                from ollama import AsyncClient
-                from config import OLLAMA_HOST, MODEL_NAME
-                client = AsyncClient(host=OLLAMA_HOST)
+                from ai_client import generate_text
                 
-                logger.info(f"Running scheduled prompt for job {job_id} against {MODEL_NAME}")
-                resp = await client.generate(model=MODEL_NAME, prompt=task_content)
-                response_text = resp.get("response", "").strip()
+                logger.info(f"Running scheduled prompt for job {job_id} using active core client")
+                response_text = await generate_text(task_content)
                 logger.info(f"Job {job_id} prompt response: {response_text[:100]}")
                 
                 # Log to a special "Automated Tasks Log" conversation
@@ -150,9 +147,7 @@ class JarvisFileEventHandler(FileSystemEventHandler):
                     except Exception as r_err:
                         text_snippet = f"[Binary/Unreadable file type: {r_err}]"
                         
-                    from ollama import AsyncClient
-                    from config import OLLAMA_HOST, MODEL_NAME
-                    client = AsyncClient(host=OLLAMA_HOST)
+                    from ai_client import generate_text
                     
                     prompt = (
                         f"Summarize the following file contents. The file name is '{filename}'. "
@@ -160,8 +155,7 @@ class JarvisFileEventHandler(FileSystemEventHandler):
                         f"File content:\n{text_snippet}\n\n"
                         f"Summary:"
                     )
-                    resp = await client.generate(model=MODEL_NAME, prompt=prompt)
-                    summary = resp.get("response", "").strip()
+                    summary = await generate_text(prompt)
                     
                     from memory import create_conversation, save_message, get_conversations
                     convs = get_conversations()

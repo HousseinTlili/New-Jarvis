@@ -6,13 +6,16 @@ Jarvis is a local, private, and fully offline intelligent desktop assistant buil
 
 ## 🚀 Key Features
 
-* **💬 Smart Streaming Chat:** Chat in real-time with local LLMs (configured with `qwen3.5:9b` by default) via **Ollama**.
+* **💬 Multi-Provider AI Support:** Chat in real-time with local LLMs via **Ollama**, or seamlessly route requests to external providers including **OpenAI**, **Anthropic Claude**, **Google Gemini**, and **Nvidia NIM**.
+* **⚙️ Cyber Settings Panel:** Sleek configuration window to switch active model providers, update custom base URLs, manage API keys, and test connections with live feedback before saving.
+* **🧠 Thinking Process Logs:** Stream and display model reasoning paths (from reasoning-enabled models like DeepSeek-R1 or NIM) inside collapsible **"Thinking Process"** accordions in the chat bubbles.
 * **🗣️ Offline Voice System:**
   * **Wake Word Detection:** Activate Jarvis hands-free using **openwakeword** ("Hey Jarvis").
   * **High-Quality Speech Synthesis (TTS):** Beautiful, natural-sounding voice output powered by **Kokoro ONNX**.
   * **Local Transcription (STT):** Fast and accurate speech recognition powered by **Faster-Whisper**.
 * **🔮 Neural Orb:** An interactive Three.js 3D orb that visualizes voice states (listening, thinking, speaking) with smooth animations.
 * **📂 Local Knowledge RAG (Retrieval-Augmented Generation):** Index your local directories to let Jarvis retrieve and answer questions based on your files.
+* **🔍 Resilient Web Search:** Search the web using a fail-safe pipeline: DuckDuckGo -> Startpage (Google search results proxy parsed with a custom HTML parser) -> Wikipedia Search API, ensuring search never fails due to IP rate limits.
 * **📋 Active System Monitoring:**
   * **Clipboard Monitor:** Real-time Windows clipboard tracking with prompt toast alerts.
   * **Screen Memory Monitor:** Periodically logs active window telemetry to capture contextual workflows.
@@ -33,14 +36,16 @@ graph TD
 
     subgraph Backend [Local Python Service]
         FastAPI[FastAPI Server / WebSockets]
+        AIC[ai_client.py Inference Client]
         RAG[RAG Manager / Vector Search]
         Voice[Voice Manager]
         Sched[Task Scheduler & Watchers]
         DB[(SQLite - jarvis.db)]
     end
 
-    subgraph External [Offline AI & OS Tools]
+    subgraph External [AI Providers & OS Tools]
         Ollama[Ollama Local LLM]
+        APIs[Cloud APIs: OpenAI / Claude / Gemini / NIM]
         Whisper[Faster-Whisper STT]
         Kokoro[Kokoro ONNX TTS]
         OpenWakeWord[OpenWakeWord]
@@ -48,6 +53,7 @@ graph TD
     end
 
     UI <==>|WebSockets & REST| FastAPI
+    FastAPI <--> AIC
     FastAPI <--> RAG
     FastAPI <--> Voice
     FastAPI <--> Sched
@@ -56,7 +62,8 @@ graph TD
     Voice <--> Kokoro
     Voice <--> OpenWakeWord
     RAG <--> DB
-    FastAPI <--> Ollama
+    AIC <--> Ollama
+    AIC <--> APIs
     Sched <--> OS
 ```
 
@@ -118,10 +125,9 @@ Ensure you have the following installed on your machine:
 
 ## 🛠️ Configuration
 
-You can customize the voice parameters, wake word settings, and LLM configuration directly in [backend/config.py](file:///c:/Users/houst/Desktop/Projects/New%20Jarvis/backend/config.py):
+You can customize voice parameters, wake word settings, and local defaults in [backend/config.py](file:///c:/Users/houst/Desktop/Projects/New%20Jarvis/backend/config.py):
 
-* `MODEL_NAME`: Set the Ollama model (e.g., `qwen3.5:9b`, `llama3`).
-* `OLLAMA_OPTIONS`: Configure the context length and quantization cache.
-* `TTS_VOICE_DEFAULT`: Set the speaker voice accent (e.g., `bm_george` for British Male).
+* `MODEL_NAME`: Set the local Ollama model (e.g., `qwen3.5:9b`, `llama3`).
+* `OLLAMA_OPTIONS`: Configure local context length and quantization cache.
+* `TTS_VOICE_DEFAULT`: Set the default speaker voice accent (e.g., `bm_george` for British Male).
 * `SILENCE_THRESHOLD` & `SILENCE_DURATION`: Tune Voice Activity Detection (VAD) sensitivity.
-

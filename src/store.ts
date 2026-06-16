@@ -14,6 +14,7 @@ export interface Message {
   role: "user" | "assistant" | "tool";
   content: string;
   timestamp: string;
+  reasoning_content?: string;
   // Ephemeral fields for UI rendering
   tool_name?: string;
   tool_args?: Record<string, any>;
@@ -160,14 +161,14 @@ interface JarvisState {
   clearClipboardToast: () => void;
 
   // Telemetry View & State
-  activeView: "chat" | "dashboard" | "voice";
+  activeView: "chat" | "dashboard" | "voice" | "settings";
   telemetryStats: TelemetryStats | null;
   telemetryHistory: DailyHistory[];
   telemetryRecent: TelemetryLog[];
   telemetryLoading: boolean;
 
   // Telemetry Actions
-  setActiveView: (view: "chat" | "dashboard" | "voice") => void;
+  setActiveView: (view: "chat" | "dashboard" | "voice" | "settings") => void;
   fetchTelemetry: () => Promise<void>;
 
   // Scheduler States
@@ -180,6 +181,13 @@ interface JarvisState {
   toggleJob: (jobId: string, active: boolean) => Promise<void>;
   deleteJob: (jobId: string) => Promise<void>;
   deleteWatcher: (id: number) => Promise<void>;
+
+  // Settings State & Actions
+  settings: Record<string, string>;
+  streamingReasoning: string;
+  fetchSettings: () => Promise<void>;
+  saveSetting: (key: string, value: string) => Promise<void>;
+  testSettings: (data: any) => Promise<{ status: "ok" | "error"; message: string }>;
 }
 
 let ws: WebSocket | null = null;
@@ -228,6 +236,9 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
   fileWatchers: [],
   schedulerLoading: false,
   
+  settings: {},
+  streamingReasoning: "",
+  
   initSetup: async () => {
     // Listen for progress updates from Tauri Rust
     await listen<SetupProgressPayload>("setup:progress", (event) => {
@@ -239,6 +250,7 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
         get().fetchConversations();
         get().fetchRagStatus();
         get().fetchJobs();
+        get().fetchSettings();
       }
     });
 
@@ -257,6 +269,7 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
         await get().fetchConversations();
         await get().fetchRagStatus();
         await get().fetchJobs();
+        await get().fetchSettings();
       }
     } catch (e) {
       set({
@@ -388,6 +401,7 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
       messages: [...state.messages, userMsg],
       isStreaming: true,
       streamingContent: "",
+      streamingReasoning: "",
       orbState: "thinking",
       activeToolCall: null,
       lastRequestFromVoice: false // Typed, so don't read response aloud unless voiceMode active
@@ -481,6 +495,11 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
           lastRequestFromVoice: true,
           voiceState: "idle"
         }));
+      } else if (type === "reasoning") {
+        set((state) => ({
+          streamingReasoning: (state.streamingReasoning || "") + data.content,
+          orbState: "thinking"
+        }));
       } else if (type === "token") {
         set((state) => ({
           streamingContent: state.streamingContent + data.content,
@@ -514,13 +533,15 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
           conversation_id: convId,
           role: "assistant",
           content: get().streamingContent,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          reasoning_content: get().streamingReasoning || undefined
         };
 
         set((state) => ({
           messages: [...state.messages, assistantMsg],
           isStreaming: false,
           streamingContent: "",
+          streamingReasoning: "",
           orbState: "idle",
           activeToolCall: null
         }));
@@ -835,6 +856,55 @@ export const useJarvisStore = create<JarvisState>((set, get) => ({
       }
     } catch (e) {
       console.error(`Failed to delete watcher ${id}:`, e);
+    }
+  },
+
+  fetchSettings: async () => {
+    const { apiBase } = get();
+    try {
+      const resp = await fetch(`${apiBase}/api/settings`);
+      if (resp.ok) {
+        const settings = await resp.json();
+        set({ settings });
+      }
+    } catch (e) {
+      console.error("Failed to fetch settings:", e);
+    }
+  },
+
+  saveSetting: async (key: string, value: string) => {
+    const { apiBase } = get();
+    try {
+      const resp = await fetch(`${apiBase}/api/settings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, value }),
+      });
+      if (resp.ok) {
+        set((state) => ({
+          settings: { ...state.settings, [key]: value }
+        }));
+      }
+    } catch (e) {
+      console.error(`Failed to save setting ${key}:`, e);
+    }
+  },
+
+  testSettings: async (data: any) => {
+    const { apiBase } = get();
+    try {
+      const resp = await fetch(`${apiBase}/api/settings/test`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (resp.ok) {
+        return await resp.json();
+      }
+      return { status: "error", message: "Failed to connect to backend check endpoint." };
+    } catch (e) {
+      console.error("Failed to test settings:", e);
+      return { status: "error", message: String(e) };
     }
   }
 }));

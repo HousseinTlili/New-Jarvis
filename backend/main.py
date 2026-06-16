@@ -19,7 +19,7 @@ from memory import (
     get_all_facts,
     save_fact
 )
-from ollama_client import stream_chat
+from ai_client import stream_chat
 from tools.text_cleaner import clean_text_for_speech
 from kokoro_onnx import Kokoro
 import soundfile as sf
@@ -448,6 +448,119 @@ def api_telemetry_stats():
         logger.error(f"Error getting telemetry stats: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+class SettingItem(BaseModel):
+    key: str
+    value: str
+
+class TestSettingsRequest(BaseModel):
+    provider: str
+    local_model: Optional[str] = None
+    local_host: Optional[str] = None
+    openai_key: Optional[str] = None
+    openai_model: Optional[str] = None
+    openai_base_url: Optional[str] = None
+    anthropic_key: Optional[str] = None
+    anthropic_model: Optional[str] = None
+    gemini_key: Optional[str] = None
+    gemini_model: Optional[str] = None
+    nvidia_key: Optional[str] = None
+    nvidia_model: Optional[str] = None
+    nvidia_base_url: Optional[str] = None
+
+@app.get("/api/settings")
+def get_all_settings_api():
+    from database import get_db_connection
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT key, value FROM settings")
+        rows = cursor.fetchall()
+        return {row["key"]: row["value"] for row in rows}
+    except Exception as e:
+        logger.error(f"Error loading settings: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+@app.post("/api/settings")
+def save_setting_api(data: SettingItem):
+    from database import save_setting
+    try:
+        save_setting(data.key, data.value)
+        return {"status": "ok"}
+    except Exception as e:
+        logger.error(f"Error saving setting {data.key}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/settings/test")
+async def test_settings_api(data: TestSettingsRequest):
+    try:
+        if data.provider == "local":
+            try:
+                from ollama import AsyncClient
+            except ImportError:
+                raise ValueError("Ollama python client library is not installed in the backend venv.")
+                
+            client = AsyncClient(host=data.local_host or "http://localhost:11434")
+            await client.generate(model=data.local_model or "qwen3.5:9b", prompt="say ok")
+            return {"status": "ok", "message": "Connection to Ollama successful!"}
+            
+        elif data.provider in ["openai", "gemini", "nvidia"]:
+            try:
+                from openai import AsyncOpenAI
+            except ImportError:
+                raise ValueError("OpenAI python client library is not installed in the backend venv.")
+                
+            if data.provider == "openai":
+                key = data.openai_key
+                base_url = data.openai_base_url or "https://api.openai.com/v1"
+                model = data.openai_model or "gpt-4o-mini"
+            elif data.provider == "gemini":
+                key = data.gemini_key
+                base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
+                model = data.gemini_model or "gemini-1.5-flash"
+            else: # nvidia
+                key = data.nvidia_key
+                base_url = data.nvidia_base_url or "https://integrate.api.nvidia.com/v1"
+                model = data.nvidia_model or "minimaxai/minimax-m3"
+                
+            if not key:
+                raise ValueError(f"API Key is required for {data.provider.upper()}")
+                
+            client = AsyncOpenAI(api_key=key, base_url=base_url)
+            await client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": "say ok"}],
+                max_tokens=5
+            )
+            return {"status": "ok", "message": f"Connection to {data.provider.upper()} successful!"}
+            
+        elif data.provider == "anthropic":
+            try:
+                from anthropic import AsyncAnthropic
+            except ImportError:
+                raise ValueError("Anthropic python client library is not installed in the backend venv.")
+                
+            key = data.anthropic_key
+            model = data.anthropic_model or "claude-3-5-sonnet-latest"
+            if not key:
+                raise ValueError("API Key is required for Anthropic")
+                
+            client = AsyncAnthropic(api_key=key)
+            await client.messages.create(
+                model=model,
+                max_tokens=5,
+                messages=[{"role": "user", "content": "say ok"}]
+            )
+            return {"status": "ok", "message": "Connection to Anthropic successful!"}
+            
+        else:
+            raise ValueError(f"Unknown provider: {data.provider}")
+            
+    except Exception as e:
+        logger.error(f"Test connection failed: {e}")
+        return {"status": "error", "message": str(e)}
+
 @app.get("/api/telemetry/history")
 def api_telemetry_history(days: Optional[int] = 7):
     from recall.telemetry import get_telemetry_history
@@ -534,17 +647,16 @@ def api_delete_watcher(watcher_id: int):
     raise HTTPException(status_code=500, detail="Failed to delete file watcher")
 
 async def auto_rename_chat(conversation_id: int, user_query: str):
-    # Generates a quick 3-5 word title using Ollama
+    # Generates a quick 3-5 word title using the active provider core
     try:
-        from ollama import AsyncClient
-        client = AsyncClient(host=OLLAMA_HOST)
+        from ai_client import generate_text
         prompt = (
             f"Generate a short title (3 to 5 words max) summarizing this user query. "
             f"Do not write any prefix, suffix, quotes, or markdown. Output ONLY the plain title text.\n"
             f"Query: {user_query}"
         )
-        resp = await client.generate(model=MODEL_NAME, prompt=prompt)
-        title = resp.get('response', '').strip().strip('"').strip("'").strip()
+        title = await generate_text(prompt)
+        title = title.strip().strip('"').strip("'").strip()
         if title and len(title) > 2:
             title = title[:35]  # Keep it short
             logger.info(f"Auto-renaming conversation {conversation_id} to '{title}'")

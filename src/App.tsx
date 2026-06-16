@@ -6,6 +6,7 @@ import { ChatWindow } from "./components/ChatWindow";
 import { InputBar } from "./components/InputBar";
 import { Dashboard } from "./components/Dashboard";
 import { VoiceWindow } from "./components/VoiceWindow";
+import { SettingsWindow } from "./components/SettingsWindow";
 import { ClipboardToast } from "./components/ClipboardToast";
 import { invoke } from "@tauri-apps/api/core";
 import { Minus, Square, X } from "lucide-react";
@@ -62,6 +63,8 @@ const App: React.FC = () => {
             <ChatWindow />
             <InputBar />
           </>
+        ) : activeView === "settings" ? (
+          <SettingsWindow />
         ) : (
           <Dashboard />
         )}

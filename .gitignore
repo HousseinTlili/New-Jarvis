@@ -34,4 +34,5 @@ backend/*.wav
 backend/*.tmp
 *.wav
 *.tmp
+data/
 

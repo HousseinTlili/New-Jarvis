@@ -297,7 +297,7 @@ class VoiceManager:
             })
             
             # Dispatch directly to the main WebSocket chat loop
-            from ollama_client import stream_chat
+            from ai_client import stream_chat
             
             async def run_chat():
                 try:

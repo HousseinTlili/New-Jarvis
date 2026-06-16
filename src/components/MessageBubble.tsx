@@ -4,7 +4,7 @@ import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
 import { Message } from "../store";
 import { MermaidRenderer } from "./MermaidRenderer";
-import { Copy, Check, Terminal, FolderOpen, Search, Clock, ShieldCheck, Database, ChevronDown, ChevronUp } from "lucide-react";
+import { Copy, Check, Terminal, FolderOpen, Search, Clock, ShieldCheck, Database, ChevronDown, ChevronUp, Cpu } from "lucide-react";
 
 interface MessageBubbleProps {
   message: Message;
@@ -17,6 +17,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
 
   const [copied, setCopied] = useState(false);
   const [toolCollapsed, setToolCollapsed] = useState(true);
+  const [reasoningCollapsed, setReasoningCollapsed] = useState(false);
 
   const handleCopyText = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -153,6 +154,27 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
         
         {/* Content Box */}
         <div className="flex-1 min-w-0 pt-0.5 select-text">
+          {message.reasoning_content && (
+            <div className="mb-3.5 border border-slate-900 bg-[#06080e]/40 rounded-xl overflow-hidden shadow-[inset_0_0_8px_rgba(0,0,0,0.6)]">
+              <div
+                onClick={() => setReasoningCollapsed(!reasoningCollapsed)}
+                className="flex items-center justify-between p-2.5 bg-[#090b11] border-b border-slate-900 cursor-pointer hover:bg-slate-950/20 transition-colors text-[9px] font-mono text-slate-500 uppercase tracking-widest font-bold select-none"
+              >
+                <div className="flex items-center gap-2">
+                  <Cpu className="w-3.5 h-3.5 text-slate-600 animate-pulse" />
+                  <span>Thinking Process</span>
+                </div>
+                <span className="text-[8px] bg-slate-900 border border-slate-800 px-1.5 py-0.5 rounded text-slate-400">
+                  {reasoningCollapsed ? "SHOW" : "HIDE"}
+                </span>
+              </div>
+              {!reasoningCollapsed && (
+                <div className="p-3 text-xs text-slate-400 font-mono italic whitespace-pre-wrap leading-relaxed">
+                  {message.reasoning_content}
+                </div>
+              )}
+            </div>
+          )}
           <div className="prose prose-invert max-w-none text-slate-200 text-sm leading-relaxed space-y-4">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}

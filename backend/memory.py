@@ -51,13 +51,16 @@ def get_messages(conversation_id: int, include_archived: bool = True):
     conn.close()
     return [dict(row) for row in rows]
 
-def save_message(conversation_id: int, role: str, content: str):
+def save_message(conversation_id: int, role: str, content: str, reasoning_content: str = None):
     conn = get_db_connection()
     cursor = conn.cursor()
     timestamp = datetime.datetime.now().isoformat()
     cursor.execute(
-        "INSERT INTO messages (conversation_id, role, content, timestamp, is_archived) VALUES (?, ?, ?, ?, 0)",
-        (conversation_id, role, content, timestamp)
+        """
+        INSERT INTO messages (conversation_id, role, content, timestamp, is_archived, reasoning_content) 
+        VALUES (?, ?, ?, ?, 0, ?)
+        """,
+        (conversation_id, role, content, timestamp, reasoning_content)
     )
     conn.commit()
     conn.close()
